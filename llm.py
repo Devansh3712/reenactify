@@ -60,16 +60,14 @@ class Database:
         return df.documents.to_list()
 
 
-def get_llm_response(
-    api_key: str, session_type: str, topic: str, prompt: str, db: Database
-):
+def get_llm_response(session_type: str, topic: str, prompt: str, db: Database):
     with open(os.path.join(current_directory, "prompt.txt")) as infile:
         system = infile.read()
     system = system.format(
         session_type=session_type, topic=topic, rag=db.get(topic, prompt)
     )
 
-    client = Groq(api_key=api_key)
+    client = Groq(api_key=st.secrets.GROQ_API_KEY)
     stream = client.chat.completions.create(
         messages=[
             {"role": "system", "content": system},

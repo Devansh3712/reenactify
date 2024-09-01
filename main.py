@@ -18,8 +18,6 @@ init = {
     "db": Database(),
     "scraped": False,
     "messages": [],
-    "GROQ_API_KEY": st.secrets.GROQ_API_KEY,
-    "TAVILY_SEARCH_API_KEY": st.secrets.TAVILY_SEARCH_API_KEY,
 }
 
 selectbox_options = ("Event", "Person", "Place", "Time Period")
@@ -32,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 def selectbox_callback():
     st.session_state.session_type = st.session_state.selectbox
-    st.session_state.index = selectbox_options.index(st.session_state.session_type)
+    st.session_state.index = selectbox_options.index(st.session_state.selectbox)
 
 
 def topic_callback():
@@ -89,8 +87,8 @@ if st.session_state.session_type:
                 st.write("Searching resources")
                 try:
                     tavily_result = tavily_search_results(
+                        st.session_state.session_type,
                         st.session_state.session_topic,
-                        st.session_state.TAVILY_SEARCH_API_KEY,
                     )
                     st.write("Scraping data")
                     documents = scrape_tavily_results(tavily_result)
@@ -119,7 +117,6 @@ if st.session_state.session_type:
             with st.chat_message("assistant"):
                 try:
                     stream = get_llm_response(
-                        st.session_state.GROQ_API_KEY,
                         st.session_state.session_type,
                         st.session_state.topic,
                         st.session_state.messages[-1]["content"],

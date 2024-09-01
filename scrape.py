@@ -1,6 +1,7 @@
 from concurrent.futures import as_completed, Future, ThreadPoolExecutor
 
 import httpx
+import streamlit as st
 from bs4 import BeautifulSoup
 from httpx import Response
 
@@ -29,9 +30,11 @@ sections = [
 ]
 
 
-# TODO: Add session type to payload query
-def tavily_search_results(topic: str, api_key: str) -> list[TavilySearchResult]:
-    payload = {"api_key": api_key, "query": topic}
+def tavily_search_results(session_type: str, topic: str) -> list[TavilySearchResult]:
+    payload = {
+        "api_key": st.secrets.TAVILY_SEARCH_API_KEY,
+        "query": f"Historical {session_type} {topic}",
+    }
     response = httpx.post("https://api.tavily.com/search", json=payload)
 
     if response.status_code != 200:
