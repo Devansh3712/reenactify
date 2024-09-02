@@ -34,11 +34,12 @@ def tavily_search_results(session_type: str, topic: str) -> list[TavilySearchRes
     payload = {
         "api_key": st.secrets.TAVILY_SEARCH_API_KEY,
         "query": f"Historical {session_type} {topic}",
+        "exclude_domains": ["youtube.com"],
     }
     response = httpx.post("https://api.tavily.com/search", json=payload)
 
     if response.status_code != 200:
-        raise
+        return []
 
     data = response.json()
     return _TavilySearchResults(**data).results
@@ -54,12 +55,15 @@ def scrape_tavily_results(tavily_result: list[TavilySearchResult]):
 
     result: list[str] = []
     for future in as_completed(futures):
-        response = future.result()
-        if response.status_code == 200:
-            soup = BeautifulSoup(response.text, "lxml")
-            # Remove unwanted HTML tags
-            for data in soup(html_tags):
-                data.decompose()
-            result.append(" ".join(soup.stripped_strings))
+        try:
+            response = future.result()
+            if response.status_code == 200:
+                soup = BeautifulSoup(response.text, "lxml")
+                # Remove unwanted HTML tags
+                for data in soup(html_tags):
+                    data.decompose()
+                result.append(" ".join(soup.stripped_strings))
+        except:
+            continue
 
     return result
