@@ -27,7 +27,16 @@ Your primary goal is to accurately capture entities and relationships directly f
 - Strict Adherence: Follow these instructions strictly to ensure the knowledge graph is both accurate and easy to interpret.
 - Neo4j Integration: The output generated from this process will be used to create a knowledge graph in Neo4j. Therefore, it is crucial that the entities and relationships are structured clearly and consistently to facilitate seamless integration with Neo4j's graph database.
 
-5. Examples
+5. Output Requirements
+Each entry in your output JSON must strictly contain the following keys:
+- head: The primary entity or subject.
+- head_type: The type or category of the head entity (e.g., Person, Company, Event).
+- tail: The related entity or object.
+- tail_type: The type or category of the tail entity (e.g., Person, Location, Date).
+- relation: The relationship type connecting the head and tail entities (e.g., WORKS_FOR, LOCATED_IN).
+- text: The exact text or brief explanation from the source material that describes this relationship.
+
+6. Examples
 
 [INPUT]
 "George Washington led the Continental Army during the American Revolutionary War, which occurred between 1775 and 1783. The war included significant events such as the Siege of Yorktown, which took place in Yorktown, Virginia, in 1781."
