@@ -15,7 +15,6 @@ class _TavilySearchResults(BaseModel):
 class GraphNode(TypedDict):
     text: str
     head: str
-    # TODO: Use an enum for head_type
     head_type: str
     relation: str
     tail: str

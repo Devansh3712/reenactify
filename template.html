@@ -4,19 +4,14 @@
 
     <script>
       function neighbourhoodHighlight(params) {
-        // console.log("in nieghbourhoodhighlight");
         allNodes = nodes.get({ returnType: "Object" });
-        // originalNodes = JSON.parse(JSON.stringify(allNodes));
-        // if something is selected:
         if (params.nodes.length > 0) {
           highlightActive = true;
           var i, j;
           var selectedNode = params.nodes[0];
           var degrees = 2;
 
-          // mark all nodes as hard to read.
           for (let nodeId in allNodes) {
-            // nodeColors[nodeId] = allNodes[nodeId].color;
             allNodes[nodeId].color = "rgba(200,200,200,0.5)";
             if (allNodes[nodeId].hiddenLabel === undefined) {
               allNodes[nodeId].hiddenLabel = allNodes[nodeId].label;
@@ -26,7 +21,6 @@
           var connectedNodes = network.getConnectedNodes(selectedNode);
           var allConnectedNodes = [];
 
-          // get the second degree nodes
           for (i = 1; i < degrees; i++) {
             for (j = 0; j < connectedNodes.length; j++) {
               allConnectedNodes = allConnectedNodes.concat(
@@ -35,9 +29,7 @@
             }
           }
 
-          // all second degree nodes get a different color and their label back
           for (i = 0; i < allConnectedNodes.length; i++) {
-            // allNodes[allConnectedNodes[i]].color = "pink";
             allNodes[allConnectedNodes[i]].color = "rgba(150,150,150,0.75)";
             if (allNodes[allConnectedNodes[i]].hiddenLabel !== undefined) {
               allNodes[allConnectedNodes[i]].label =
@@ -46,9 +38,7 @@
             }
           }
 
-          // all first degree nodes get their own color and their label back
           for (i = 0; i < connectedNodes.length; i++) {
-            // allNodes[connectedNodes[i]].color = undefined;
             allNodes[connectedNodes[i]].color = nodeColors[connectedNodes[i]];
             if (allNodes[connectedNodes[i]].hiddenLabel !== undefined) {
               allNodes[connectedNodes[i]].label =
@@ -57,20 +47,14 @@
             }
           }
 
-          // the main node gets its own color and its label back.
-          // allNodes[selectedNode].color = undefined;
           allNodes[selectedNode].color = nodeColors[selectedNode];
           if (allNodes[selectedNode].hiddenLabel !== undefined) {
             allNodes[selectedNode].label = allNodes[selectedNode].hiddenLabel;
             allNodes[selectedNode].hiddenLabel = undefined;
           }
         } else if (highlightActive === true) {
-          // console.log("highlightActive was true");
-          // reset all nodes
           for (let nodeId in allNodes) {
-            // allNodes[nodeId].color = "purple";
             allNodes[nodeId].color = nodeColors[nodeId];
-            // delete allNodes[nodeId].color;
             if (allNodes[nodeId].hiddenLabel !== undefined) {
               allNodes[nodeId].label = allNodes[nodeId].hiddenLabel;
               allNodes[nodeId].hiddenLabel = undefined;
@@ -79,22 +63,17 @@
           highlightActive = false;
         }
 
-        // transform the object into an array
         var updateArray = [];
         if (params.nodes.length > 0) {
           for (let nodeId in allNodes) {
             if (allNodes.hasOwnProperty(nodeId)) {
-              // console.log(allNodes[nodeId]);
               updateArray.push(allNodes[nodeId]);
             }
           }
           nodes.update(updateArray);
         } else {
-          // console.log("Nothing was selected");
           for (let nodeId in allNodes) {
             if (allNodes.hasOwnProperty(nodeId)) {
-              // console.log(allNodes[nodeId]);
-              // allNodes[nodeId].color = {};
               updateArray.push(allNodes[nodeId]);
             }
           }
@@ -104,12 +83,10 @@
 
       function filterHighlight(params) {
         allNodes = nodes.get({ returnType: "Object" });
-        // if something is selected:
         if (params.nodes.length > 0) {
           filterActive = true;
           let selectedNodes = params.nodes;
 
-          // hiding all nodes and saving the label
           for (let nodeId in allNodes) {
             allNodes[nodeId].hidden = true;
             if (allNodes[nodeId].savedLabel === undefined) {
@@ -127,7 +104,6 @@
             }
           }
         } else if (filterActive === true) {
-          // reset all nodes
           for (let nodeId in allNodes) {
             allNodes[nodeId].hidden = false;
             if (allNodes[nodeId].savedLabel !== undefined) {
@@ -138,7 +114,6 @@
           filterActive = false;
         }
 
-        // transform the object into an array
         var updateArray = [];
         if (params.nodes.length > 0) {
           for (let nodeId in allNodes) {
@@ -186,7 +161,6 @@
           }
         } else if (filter["item"] === "edge") {
           let allEdges = edges.get({ returnType: "object" });
-          // check if the selected property exists for selected edge and select the nodes connected to the edge
           for (let edge in allEdges) {
             if (
               allEdges[edge][selectedProp] &&
@@ -257,7 +231,6 @@
     </div>
 
     <script type="text/javascript">
-      // initialize global variables.
       var edges;
       var nodes;
       var allNodes;
@@ -279,11 +252,9 @@
         return container;
       }
 
-      // This method is responsible for drawing the graph, returns the drawn network
       function drawGraph() {
         var container = document.getElementById("mynetwork");
 
-        // parsing and collecting nodes and edges from the python
         nodes = new vis.DataSet({{ nodes | tojson }});
         edges = new vis.DataSet({{ edges | tojson }});
 
@@ -296,8 +267,8 @@
         for (nodeId in allNodes) {
           nodeColors[nodeId] = allNodes[nodeId].color;
         }
+
         allEdges = edges.get({ returnType: "Object" });
-        // adding nodes and edges to the graph
         data = { nodes: nodes, edges: edges };
 
         var options = {
@@ -332,27 +303,16 @@
 
         network = new vis.Network(container, data, options);
 
-        // network.on("stabilizationProgress", function (params) {
-        //   document.getElementById("loadingBar").removeAttribute("style");
-        //   var maxWidth = 496;
-        //   var minWidth = 20;
-        //   var widthFactor = params.iterations / params.total;
-        //   var width = Math.max(minWidth, maxWidth * widthFactor);
-        //   document.getElementById("bar").style.width = width + "px";
-        //   document.getElementById("text").innerHTML =
-        //     Math.round(widthFactor * 100) + "%";
+        // {% if nodes | length > 100 %}
+        // network.once("stabilizationIterationsDone", function () {
+        //  document.getElementById("text").innerHTML = "100%";
+        //  document.getElementById("bar").style.width = "496px";
+        //  document.getElementById("loadingBar").style.opacity = 0;
+        //  setTimeout(function () {
+        //    document.getElementById("loadingBar").style.display = "none";
+        //  }, 500);
         // });
-        {% if nodes | length > 100 %}
-        network.once("stabilizationIterationsDone", function () {
-          document.getElementById("text").innerHTML = "100%";
-          document.getElementById("bar").style.width = "496px";
-          document.getElementById("loadingBar").style.opacity = 0;
-          // really clean the dom element
-          setTimeout(function () {
-            document.getElementById("loadingBar").style.display = "none";
-          }, 500);
-        });
-        {% endif %}
+        // {% endif %}
 
         return network;
       }

@@ -1,12 +1,12 @@
 import logging
-from concurrent.futures import as_completed, Future, ThreadPoolExecutor
 from uuid import uuid4
 
 import streamlit as st
 import streamlit.components.v1 as components
 from jinja2 import Template
 
-from llm import get_llm_response, generate_entity_relationship
+from knowledge_graph import create_knowledge_graph
+from llm import get_llm_response
 from rag import Database
 from scrape import scrape_tavily_results, tavily_search_results
 
@@ -31,6 +31,7 @@ init = {
 
 selectbox_options = ("Event", "Person", "Place", "Time Period")
 
+# Use structured logging
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s: %(message)s"
 )
@@ -56,66 +57,6 @@ def reset_callback():
         st.session_state[key] = value
 
 
-def create_node(head: str, head_type: str):
-    return {
-        "color": "#97c2fc",
-        "font": {"color": "white"},
-        "id": head,
-        "label": head,
-        "shape": "dot",
-        "title": head_type,
-    }
-
-
-def create_edge(head: str, tail: str, text: str):
-    # Add line breaks to text
-    text_list = text.split(" ")
-    for i in range(len(text_list)):
-        if i > 0 and i % 5 == 0:
-            text_list[i] = "<br>" + text_list[i]
-    text = " ".join(text_list)
-    return {
-        "arrows": "to",
-        "from": head,
-        "to": tail,
-        "title": text,
-    }
-
-
-# Create graph using Jinja2 and vis.js template
-def create_knowledge_graph(documents: list[dict]):
-    futures: list[Future] = []
-    with ThreadPoolExecutor() as executor:
-        for document in documents:
-            future = executor.submit(generate_entity_relationship, document)
-            futures.append(future)
-    # Keep track of added nodes
-    nodes = set()
-    node_list = []
-    edge_list = []
-    for future in as_completed(futures):
-        try:
-            entity_relationship = future.result()
-            for item in entity_relationship:
-                head = item["head"]
-                tail = item["tail"]
-                text = item["text"]
-                # Add node if it hasn't been included in the graph
-                if head not in nodes:
-                    node_list.append(create_node(head, item["head_type"]))
-                    nodes.add(head)
-                if tail not in nodes:
-                    node_list.append(create_node(tail, item["tail_type"]))
-                    nodes.add(tail)
-                # Add an edge between head and tail node
-                edge_list.append(create_edge(head, tail, text))
-        except Exception as e:
-            logger.error(e)
-
-    st.session_state.nodes = node_list
-    st.session_state.edges = edge_list
-
-
 def initialize_sidebar():
     st.sidebar.text_input(
         f"Enter a {st.session_state.session_type}",
@@ -127,6 +68,8 @@ def initialize_sidebar():
         "Generate Knowledge Graph",
         key="knowledge_graph",
         value=st.session_state.knowledge_graph,
+        help="A knowledge graph is an organized representaton of entities and "
+        "their relationships",
     )
     start, reset = st.sidebar.columns([1, 1])
     start.button("Start", use_container_width=True, on_click=start_callback)
@@ -154,7 +97,9 @@ def initialize_rag():
         if st.session_state.knowledge_graph:
             st.toast("Creating a knowledge graph might take some time")
             st.write("Creating knowledge graph")
-            create_knowledge_graph(documents)
+            st.session_state.nodes, st.session_state.edges = create_knowledge_graph(
+                documents
+            )
 
         status.update(label="Assistant created", state="complete")
         st.session_state.scraped = True
@@ -190,7 +135,7 @@ def chat(prompt: str):
             st.error("Unable to get assistant response, try again later")
 
 
-# Initialize state variables
+# Initialize state variables whose values are not set
 for key, value in init.items():
     if key not in st.session_state:
         st.session_state[key] = value
