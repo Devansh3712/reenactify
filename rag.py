@@ -10,13 +10,13 @@ from streamlit_chromadb_connection.chromadb_connection import ChromadbConnection
 
 
 class Database:
-    def __init__(self) -> None:
+    def __init__(self, collection: str | None = None) -> None:
         self.conn = st.connection(
             name="persistent_connection",
             type=ChromadbConnection,
             **{"client": "PersistentClient", "path": "/tmp"}
         )
-        self.collection = "reenactify"
+        self.collection = "reenactify" if collection is None else collection
         self.embedding_function = "DefaultEmbeddingFunction"
         try:
             self.conn.create_collection(

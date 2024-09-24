@@ -4,6 +4,7 @@ from uuid import uuid4
 import streamlit as st
 import streamlit.components.v1 as components
 from jinja2 import Template
+from pypdf import PdfReader
 
 from knowledge_graph import create_knowledge_graph
 from llm import get_llm_response
@@ -29,7 +30,7 @@ init = {
     "messages": [],
 }
 
-selectbox_options = ("Event", "Person", "Place", "Time Period")
+selectbox_options = ("Event", "Person", "Place", "Time Period", "PDF Chat")
 
 # Use structured logging
 logging.basicConfig(
@@ -137,6 +138,8 @@ def chat(prompt: str):
 
 # Initialize state variables whose values are not set
 for key, value in init.items():
+    # On rerun, only set values for keys which have
+    # not been used yet
     if key not in st.session_state:
         st.session_state[key] = value
 
@@ -148,7 +151,15 @@ st.sidebar.selectbox(
     on_change=selectbox_callback,
 )
 
-if st.session_state.session_type:
+if st.session_state.session_type == "PDF Chat":
+    st.sidebar.file_uploader("Choose a file", type=["pdf"], key="pdf")
+    if st.session_state.pdf:
+        reader = PdfReader(st.session_state.pdf)
+        num_pages = reader.get_num_pages()
+        for i in range(num_pages):
+            page = reader.pages[i]
+            text = page.extract_text()
+else:
     initialize_sidebar()
     # Clicked the start button without input topic
     if not st.session_state.session_topic and st.session_state.start:
