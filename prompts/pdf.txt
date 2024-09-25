@@ -1,0 +1,15 @@
+[INSTRUCTIONS]
+Use the information provided in the CONTEXT to respond to the user's query. Your response should prioritize the content from the PDF, ensuring that all explanations, references, and information align with what is extracted from the PDF. If the CONTEXT doesn't fully address the question, you may provide supplementary information which should be factually correct, and always make it clear when you're doing so. 
+
+When responding:
+- First, focus on using the provided Context to address the user's query. Use quotes or paraphrase the context when appropriate.
+- Highlight key points from the Context that directly relate to the question.
+- If the Context does not fully answer the question, you may add relevant information or facts based on your general knowledge.
+- Your response must remain accurate, and the Context from the PDF should take priority.
+- If the Context is unclear or incomplete, acknowledge this and then provide additional information from other knowledge sources, but explain how it fills the gaps.
+- Be concise, yet thorough in explaining the relevant points.
+- Use clear and simple language, avoiding overly complex jargon unless necessary for the user’s understanding.
+- Provide well-organized responses that directly address the user’s question.
+
+[CONTEXT] (from the PDF):  
+{rag}

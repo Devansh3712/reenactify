@@ -1,4 +1,5 @@
 import logging
+import re
 from uuid import uuid4
 
 import streamlit as st
@@ -82,6 +83,18 @@ def initialize_sidebar():
     )
 
 
+def initialize_pdf_sidebar():
+    st.sidebar.file_uploader("Choose a file", type=["pdf"], key="pdf")
+    start, reset = st.sidebar.columns([1, 1])
+    start.button("Start", use_container_width=True, on_click=start_callback)
+    reset.button(
+        "Reset",
+        type="primary",
+        on_click=reset_callback,
+        use_container_width=True,
+    )
+
+
 def initialize_rag():
     with st.status("Creating assistant", expanded=True) as status:
         st.write("Searching resources")
@@ -106,6 +119,22 @@ def initialize_rag():
         st.session_state.scraped = True
 
 
+def initialize_pdf_rag():
+    with st.status("Creating assistant", expanded=True) as status:
+        st.write("Reading PDF")
+        reader = PdfReader(st.session_state.pdf)
+        num_pages = reader.get_num_pages()
+        st.write("Extracting text")
+        # TODO: Parallelize it
+        for i in range(num_pages):
+            page = reader.pages[i]
+            extracted = page.extract_text()
+            cleaned = re.sub(r"\s+", " ", extracted).strip()
+            st.session_state.db.add(cleaned)
+        status.update(label="Assistant created", state="complete")
+        st.session_state.scraped = True
+
+
 def render_knowledge_graph():
     if st.session_state.knowledge_graph:
         with open("template.html") as html:
@@ -116,7 +145,7 @@ def render_knowledge_graph():
         components.html(rendered_html, height=500)
 
 
-def chat(prompt: str):
+def chat(prompt: str, topic: str = ""):
     with st.chat_message("user"):
         st.markdown(prompt)
         st.session_state.messages.append({"role": "user", "content": prompt})
@@ -125,8 +154,8 @@ def chat(prompt: str):
         try:
             stream = get_llm_response(
                 st.session_state.session_type,
-                st.session_state.topic,
-                st.session_state.messages[-1]["content"],
+                topic,
+                prompt,
                 st.session_state.db,
             )
             response = st.write_stream(stream)
@@ -151,35 +180,44 @@ st.sidebar.selectbox(
     on_change=selectbox_callback,
 )
 
-if st.session_state.session_type == "PDF Chat":
-    st.sidebar.file_uploader("Choose a file", type=["pdf"], key="pdf")
-    if st.session_state.pdf:
-        reader = PdfReader(st.session_state.pdf)
-        num_pages = reader.get_num_pages()
-        for i in range(num_pages):
-            page = reader.pages[i]
-            text = page.extract_text()
-else:
-    initialize_sidebar()
-    # Clicked the start button without input topic
-    if not st.session_state.session_topic and st.session_state.start:
-        st.error(f"A {st.session_state.session_type} is required")
+if st.session_state.session_type:
+    if st.session_state.session_type == "PDF Chat":
+        initialize_pdf_sidebar()
+        # Start PDF extraction if start button is clicked
+        if st.session_state.pdf and st.session_state.start:
+            if not st.session_state.scraped:
+                initialize_pdf_rag()
+            else:
+                st.status("Assistant created", state="complete")
 
-    if st.session_state.topic and st.session_state.start:
-        # Do not scrape until session is reset
-        if not st.session_state.scraped:
-            initialize_rag()
-        else:
-            st.status("Assistant created", state="complete")
+            for message in st.session_state.messages:
+                with st.chat_message(message["role"]):
+                    st.markdown(message["content"])
 
-        if st.session_state.nodes and st.session_state.edges:
-            render_knowledge_graph()
-        # Display chat messages from history on app rerun
-        # Streamlit reruns script top to bottom on each interaction
-        for message in st.session_state.messages:
-            with st.chat_message(message["role"]):
-                st.markdown(message["content"])
+            prompt = st.chat_input("Ask something")
+            if prompt:
+                chat(prompt)
+    else:
+        initialize_sidebar()
+        # Clicked the start button without input topic
+        if not st.session_state.session_topic and st.session_state.start:
+            st.error(f"A {st.session_state.session_type} is required")
 
-        prompt = st.chat_input("Ask something")
-        if prompt:
-            chat(prompt)
+        if st.session_state.topic and st.session_state.start:
+            # Do not scrape until session is reset
+            if not st.session_state.scraped:
+                initialize_rag()
+            else:
+                st.status("Assistant created", state="complete")
+
+            if st.session_state.nodes and st.session_state.edges:
+                render_knowledge_graph()
+            # Display chat messages from history on app rerun
+            # Streamlit reruns script top to bottom on each interaction
+            for message in st.session_state.messages:
+                with st.chat_message(message["role"]):
+                    st.markdown(message["content"])
+
+            prompt = st.chat_input("Ask something")
+            if prompt:
+                chat(prompt, st.session_state.topic)

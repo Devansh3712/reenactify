@@ -14,11 +14,16 @@ prompts_directory = os.path.join(current_directory, "prompts")
 
 
 def get_llm_response(session_type: str, topic: str, prompt: str, db: Database):
-    with open(os.path.join(prompts_directory, "historian.txt")) as infile:
+    file_name = "pdf.txt" if session_type == "PDF Chat" else "historian.txt"
+    with open(os.path.join(prompts_directory, file_name)) as infile:
         system = infile.read()
-    system = system.format(
-        session_type=session_type, topic=topic, rag=db.get(topic, prompt)
-    )
+    if session_type == "PDF Chat":
+        # There is no specific topic for the PDF chat
+        system = system.format(rag=db.get(topic, prompt))
+    else:
+        system = system.format(
+            session_type=session_type, topic=topic, rag=db.get(topic, prompt)
+        )
 
     client = Groq(api_key=st.secrets.GROQ_API_KEY)
     stream = client.chat.completions.create(
