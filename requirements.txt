@@ -102,6 +102,7 @@ pydantic-core==2.20.1
 pydeck==0.9.1
 pygments==2.18.0
 pyparsing==3.1.4
+pypdf==5.0.0
 pypika==0.48.9
 pyproject-hooks==1.1.0
 pysqlite3-binary==0.5.3.post1
